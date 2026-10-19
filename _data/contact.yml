@@ -1,0 +1,21 @@
+#  The contact options shown at the bottom of the sidebar.
+
+- type: github
+  icon: "fab fa-github"
+
+- type: rss
+  icon: "fas fa-rss"
+  noblank: true
+
+# Uncomment and fill in the url to enable more contact options
+#
+# - type: linkedin
+#   icon: 'fab fa-linkedin'   # icons powered by <https://fontawesome.com/>
+#   url:  ''                  # Fill with your LinkedIn homepage
+#
+# - type: twitter
+#   icon: "fa-brands fa-x-twitter"   # also set twitter.username in _config.yml
+#
+# - type: email
+#   icon: "fas fa-envelope"   # also set social.email in _config.yml
+#   noblank: true

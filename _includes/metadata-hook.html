@@ -1,0 +1,11 @@
+<!-- Custom styles injected into <head> by the Chirpy theme. -->
+<style>
+  /* TryHackMe room banners are very wide (3:1 to 5:1), so the default "cover"
+     crop cuts off the room name. Show the whole banner instead, on a background
+     that matches the banners' navy so the letterboxing blends in. */
+  .preview-img img[src*="/thm/"],
+  img.preview-img[src*="/thm/"] {
+    object-fit: contain;
+    background-color: #151c2b;
+  }
+</style>
