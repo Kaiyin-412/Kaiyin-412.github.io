@@ -8,4 +8,17 @@
     object-fit: contain;
     background-color: #151c2b;
   }
+
+  /* Home page cards: put the cover image on the left instead of the right
+     (Chirpy uses flex-md-row-reverse), and round its left corners to match. */
+  @media all and (min-width: 768px) {
+    #post-list .post-preview.flex-md-row-reverse {
+      flex-direction: row !important;
+    }
+
+    #post-list .card .preview-img,
+    #post-list .card .preview-img img {
+      border-radius: 10px 0 0 10px;
+    }
+  }
 </style>
