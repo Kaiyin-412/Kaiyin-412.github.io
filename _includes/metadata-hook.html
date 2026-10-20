@@ -21,4 +21,52 @@
       border-radius: 10px 0 0 10px;
     }
   }
+
+  /* Walking duck along the bottom of the page. It never blocks clicks, and it
+     is hidden for visitors who turned on "reduce motion" in their OS. */
+  #walking-duck {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 56px;
+    height: 56px;
+    z-index: 1;
+    pointer-events: none;
+    animation: duck-walk 40s linear infinite;
+  }
+
+  #walking-duck img {
+    width: 100%;
+    height: 100%;
+    transform-origin: 50% 100%;
+    animation: duck-waddle 0.5s ease-in-out infinite alternate;
+  }
+
+  /* Walk right, turn around, walk back left, turn around. */
+  @keyframes duck-walk {
+    0%     { transform: translateX(-60px) scaleX(1); }
+    49.9%  { transform: translateX(calc(100vw + 4px)) scaleX(1); }
+    50%    { transform: translateX(calc(100vw + 4px)) scaleX(-1); }
+    99.9%  { transform: translateX(-60px) scaleX(-1); }
+    100%   { transform: translateX(-60px) scaleX(1); }
+  }
+
+  @keyframes duck-waddle {
+    from { transform: rotate(-7deg); }
+    to   { transform: rotate(7deg) translateY(-2px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #walking-duck { display: none; }
+  }
 </style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var duck = document.createElement('div');
+    duck.id = 'walking-duck';
+    duck.setAttribute('aria-hidden', 'true');
+    duck.innerHTML = '<img src="{{ "/assets/img/duck.svg" | relative_url }}" alt="">';
+    document.body.appendChild(duck);
+  });
+</script>
