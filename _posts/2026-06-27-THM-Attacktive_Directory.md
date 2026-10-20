@@ -1,7 +1,7 @@
 ---
 title: "Attacktive Directory"
 date: 2026-06-27 09:00:00 +0800
-categories: [CTF Write-ups, TryHackMe]
+categories: [TryHackMe]
 tags: [tryhackme, active-directory, medium, kerberos, windows]
 description: "TryHackMe Attacktive Directory write-up — enumerating and exploiting a vulnerable domain controller."
 image:

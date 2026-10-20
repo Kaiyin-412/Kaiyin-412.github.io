@@ -1,7 +1,7 @@
 ---
 title: "VulnNet: Active"
 date: 2026-06-23 09:00:00 +0800
-categories: [CTF Write-ups, TryHackMe]
+categories: [TryHackMe]
 tags: [tryhackme, active-directory, medium, redis, windows]
 description: "TryHackMe VulnNet: Active write-up — from Redis enumeration to Active Directory compromise."
 image:
