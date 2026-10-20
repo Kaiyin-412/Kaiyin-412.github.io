@@ -63,12 +63,15 @@
 </style>
 
 <script>
+  /* Only use block comments in this script, never double-slash line comments:
+     Chirpy squashes the HTML onto one line, so a line comment would swallow
+     everything after it and break the script. */
   document.addEventListener('DOMContentLoaded', function () {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    var STEP = 9;          // px moved per step
-    var STEP_EVERY = 420;  // ms between steps
-    var SIZE = 40;         // must match the CSS width
+    var STEP = 9;          /* px moved per step */
+    var STEP_EVERY = 420;  /* ms between steps */
+    var SIZE = 40;         /* must match the CSS width */
 
     var duck = document.createElement('div');
     duck.id = 'walking-duck';
@@ -76,7 +79,7 @@
     duck.innerHTML = '<div class="duck-flip"></div>';
     document.body.appendChild(duck);
 
-    // Inline the SVG so its feet can be animated
+    /* Inline the SVG so its feet can be animated */
     fetch('{{ "/assets/img/duck.svg" | relative_url }}')
       .then(function (r) { return r.text(); })
       .then(function (svg) {
@@ -88,7 +91,7 @@
 
     function walk() {
       var max = window.innerWidth;
-      // Turn around once fully off either edge
+      /* Turn around once fully off either edge */
       if (x > max) dir = -1;
       if (x < -SIZE) dir = 1;
       duck.classList.toggle('facing-left', dir < 0);
@@ -99,9 +102,9 @@
       foot = !foot;
       duck.classList.remove('step-a', 'step-b');
       duck.classList.add(foot ? 'step-a' : 'step-b');
-      setTimeout(function () { duck.classList.remove('step-a', 'step-b'); }, 320);  // put the foot down
+      setTimeout(function () { duck.classList.remove('step-a', 'step-b'); }, 320);  /* put the foot down */
 
-      // Now and then stop for a confused moment, like Psyduck does
+      /* Now and then stop for a confused moment, like Psyduck does */
       var pause = Math.random() < 0.04 ? 1500 + Math.random() * 1500 : 0;
       setTimeout(walk, STEP_EVERY + pause);
     }
