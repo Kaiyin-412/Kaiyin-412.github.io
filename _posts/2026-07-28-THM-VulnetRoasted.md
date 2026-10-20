@@ -1,8 +1,8 @@
 ---
 title: "VulnNet: Roasted"
 date: 2026-07-28 09:00:00 +0800
-categories: [TryHackMe]
-tags: [tryhackme, active-directory, easy, kerberos, windows]
+categories: [TryHackMe,redteam]
+tags: [tryhackme, active-directory, Easy, kerberos, windows]
 description: "TryHackMe VulnNet: Roasted write-up — roasting Kerberos accounts to take over the domain."
 image:
   path: /assets/img/posts/thm/VulnNetRoasted/VulnetRoasted.png

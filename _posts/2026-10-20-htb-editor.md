@@ -1,7 +1,7 @@
 ---
 title: "Editor"
 date: 2025-08-26 15:40:21 +0800
-categories: [HackTheBox]
+categories: [HackTheBox,redteam]
 tags: [Easy , Linux]
 description: "Linux machine"
 image:

@@ -1,7 +1,7 @@
 ---
 title: "Foward"
 date: 2026-06-25 09:00:00 +0800
-categories: [TryHackMe]
+categories: [TryHackMe,redteam]
 tags: [tryhackme, active-directory, medium, windows]
 description: "TryHackMe Foward write-up — attacking an Active Directory environment."
 image:

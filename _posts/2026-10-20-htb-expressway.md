@@ -1,7 +1,7 @@
 ---
 title: "Expressway"
 date: 2025-09-27 15:40:22 +0800
-categories: [HackTheBox]
+categories: [HackTheBox,redteam]
 tags: [Easy , Linux]
 description: "Linux machine"
 image:

@@ -1,8 +1,8 @@
 ---
 title: "Soulmate"
 date: 2026-10-20 15:40:22 +0800
-categories: [HackTheBox]
-tags: [Linux , easy]
+categories: [HackTheBox,redteam]
+tags: [Linux , Easy]
 description: "Linux machine"
 image:
   path: /assets/img/posts/htb/soulomate/soulmate-cover.png

@@ -14,7 +14,7 @@ timezone:
 # jekyll-seo-tag settings › https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
 # ↓ --------------------------
 
-title: Psyduck's Security Notes # the main title
+title: Psyduck's Cybersecurity Notes # the main title
 
 tagline: CTF write-ups, HTB , TryHackMe
 

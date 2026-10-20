@@ -1,7 +1,7 @@
 ---
 title: "Monitorsfour"
 date: 2026-05-28 15:40:22 +0800
-categories: [HackTheBox]
+categories: [HackTheBox,redteam]
 tags: [Windows, Easy]
 description: "Windows machine"
 image:
