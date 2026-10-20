@@ -4,20 +4,10 @@ icon: fas fa-info-circle
 order: 4
 ---
 
-Hi, I'm **Psyduck** 👋 — welcome to my cybersecurity notebook.
+Hi, I'm **Psyduckkkk** 👋 — welcome to my cybersecurity blog. 
 
-I use this blog to document what I learn while exploring security: solving CTF challenges,
-practising penetration testing in lab environments, analysing malware samples and trying out tools.
+Welcome to my cybersecurity journal. Here I walk through my methods for tackling CTF challenges, Hack The Box machines, and TryHackMe labs, along with honest reflections on the certifications I’ve pursued.
 
-## What you'll find here
-
-| Category | What it covers |
-| --- | --- |
-| **CTF Write-ups** | Step-by-step solutions to Capture The Flag challenges |
-| **Pentesting** | Methodology, enumeration and exploitation notes from labs |
-| **Malware Analysis** | Static and dynamic analysis of samples |
-| **Tools & Tutorials** | How-to guides for security tools |
-| **Notes** | Short cheat sheets and things worth remembering |
 
 ## Disclaimer
 
@@ -28,3 +18,4 @@ you do not own or have explicit permission to test.
 ## Find me
 
 - GitHub: [PsyDuck0v0](https://github.com/PsyDuck0v0)
+- Linkedln: [Psyduck](www.linkedin.com/in/ongkaiyin)
