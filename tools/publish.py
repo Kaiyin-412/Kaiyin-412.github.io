@@ -1,10 +1,13 @@
 """Copy an Obsidian write-up into the blog as a Chirpy post.
 
 Usage (run from the Cyber_blog folder):
-    python tools/publish.py                 # search the vault and pick a note
-    python tools/publish.py editor          # search by name
+    python tools/publish.py                 # browse the vault folder by folder, pick one or more notes
+    python tools/publish.py editor          # search by name (pick several if more than one matches)
     python tools/publish.py "G:/My Drive/Obsidian Vault/HTB/BOX/easy/editor.md"
-    python tools/publish.py editor --dry-run
+    python tools/publish.py --dry-run       # preview only, writes nothing
+
+In the browser: type a number to open a folder, "1,3" or "2-5" to pick several
+notes, "a" for every note in the folder, ".." to go back, "q" to quit.
 
 What it does:
   1. Finds the note in your Obsidian vault (the vault itself is never modified).
@@ -52,30 +55,89 @@ def vault_files(suffixes):
             yield p
 
 
-def pick_note(query):
-    if query and Path(query).is_file():
-        return Path(query)
+def parse_selection(text, count):
+    """'3' / '1,3,5' / '2-4' / '1, 4-6' -> sorted list of 0-based indexes, or None if invalid."""
+    picked = set()
+    for part in text.replace(" ", "").split(","):
+        m = re.fullmatch(r"(\d+)(?:-(\d+))?", part)
+        if not m:
+            return None
+        lo, hi = int(m.group(1)), int(m.group(2) or m.group(1))
+        if not 1 <= lo <= hi <= count:
+            return None
+        picked.update(range(lo - 1, hi))
+    return sorted(picked)
 
+
+def browse_vault():
+    """Walk the vault folder by folder and pick one or more notes."""
+    here = VAULT
+    while True:
+        folders = sorted((p for p in here.iterdir() if p.is_dir() and p.name not in SKIP_DIRS and not p.name.startswith(".")),
+                         key=lambda p: p.name.lower())
+        notes = sorted((p for p in here.iterdir() if p.is_file() and p.suffix.lower() == ".md"), key=lambda p: p.name.lower())
+        items = folders + notes
+
+        print(f"\n[{here.relative_to(VAULT).as_posix() if here != VAULT else 'vault'}]")
+        if folders:
+            print("  Folders:")
+            for i, f in enumerate(folders, 1):
+                print(f"    {i:2}. {f.name}/")
+        if notes:
+            print("  Notes:")
+            for i, n in enumerate(notes, len(folders) + 1):
+                print(f"    {i:2}. {n.stem}")
+        if not items:
+            print("  (empty)")
+        print("\n  number = open folder / pick note   1,3 or 2-5 = pick several notes"
+              + ("   a = all notes here" if notes else "") + ("   .. = back" if here != VAULT else "") + "   q = quit")
+
+        choice = input("> ").strip().lower()
+        if choice in ("q", ""):
+            sys.exit("Cancelled.")
+        if choice == ".." and here != VAULT:
+            here = here.parent
+            continue
+        if choice == "a" and notes:
+            return notes
+
+        picked = parse_selection(choice, len(items))
+        if picked is None:
+            print("  ? Not a valid choice, try again.")
+            continue
+        chosen = [items[i] for i in picked]
+        if len(chosen) == 1 and chosen[0].is_dir():
+            here = chosen[0]
+            continue
+        if any(c.is_dir() for c in chosen):
+            print("  ? Pick notes only when selecting several (open folders one at a time).")
+            continue
+        return chosen
+
+
+def pick_notes(query):
+    if not query:
+        return browse_vault()
+    if Path(query).is_file():
+        return [Path(query)]
+
+    q = query.lower()
     notes = sorted(vault_files({".md"}), key=lambda p: p.stat().st_mtime, reverse=True)
-    if query:
-        q = query.lower()
-        notes = [n for n in notes if q in n.stem.lower()] or [n for n in notes if q in str(n.relative_to(VAULT)).lower()]
-    else:
-        notes = [n for n in notes if any(n.relative_to(VAULT).parts[0].upper().startswith(f) for f, _, _ in PLATFORMS)]
-
+    notes = [n for n in notes if q in n.stem.lower()] or [n for n in notes if q in str(n.relative_to(VAULT)).lower()]
     if not notes:
         sys.exit(f"No note found matching '{query}' in {VAULT}")
     if len(notes) == 1:
-        return notes[0]
+        return notes
 
-    shown = notes[:25]
-    print("Which note do you want to publish? (most recently edited first)")
+    shown = notes[:40]
+    print(f"Notes matching '{query}' (most recently edited first):")
     for i, n in enumerate(shown, 1):
-        print(f"  {i:2}. {n.relative_to(VAULT)}")
-    choice = input("Number: ").strip()
-    if not choice.isdigit() or not 1 <= int(choice) <= len(shown):
+        print(f"  {i:2}. {n.relative_to(VAULT).as_posix()}")
+    while True:
+        picked = parse_selection(input("Pick one or more (e.g. 2 or 1,3 or 2-4), q = quit: ").strip(), len(shown))
+        if picked is not None:
+            return [shown[i] for i in picked]
         sys.exit("Cancelled.")
-    return shown[int(choice) - 1]
 
 
 def detect_platform(note):
@@ -112,20 +174,40 @@ def main():
     if not VAULT.is_dir():
         sys.exit(f"Vault not found: {VAULT}  (edit VAULT at the top of this script)")
 
-    note = pick_note(args.note)
+    notes = pick_notes(args.note)
+    if args.title and len(notes) > 1:
+        print("Note: --title is ignored when publishing several notes.")
+        args.title = None
+
+    # Index vault images by file name (Obsidian resolves ![[x.png]] by name).
+    print(f"\nPublishing {len(notes)} note(s). Scanning the vault for images...")
+    images = {}
+    for p in vault_files(IMAGE_EXTS):
+        images.setdefault(p.name.lower(), []).append(p)
+
+    written = [p for p in (publish_note(n, args.title, images, args.dry_run) for n in notes) if p]
+
+    if args.dry_run:
+        print("\nDry run - nothing was written.")
+    elif written:
+        print(f"\nDone: {len(written)} post(s) written. Fill in the empty fields in:")
+        for p in written:
+            print(f"  {p.relative_to(BLOG)}")
+        print("\nThen publish them:\n  git add -A\n  git commit -m \"Add new write-ups\"\n  git push")
+    else:
+        print("\nNothing was written.")
+
+
+def publish_note(note, title_override, images, dry_run):
+    """Convert one note into a post. Returns the post path, or None if skipped / dry run."""
     platform, categories = detect_platform(note)
-    title = args.title or note.stem.strip()
+    title = title_override or note.stem.strip()
     if title.islower():
         title = title[0].upper() + title[1:]   # editor -> Editor
     slug = slugify(title)
     now = datetime.datetime.now().astimezone() - datetime.timedelta(minutes=5)
 
     fm, body = split_front_matter(note.read_text(encoding="utf-8"))
-
-    # Index vault images by file name (Obsidian resolves ![[x.png]] by name).
-    images = {}
-    for p in vault_files(IMAGE_EXTS):
-        images.setdefault(p.name.lower(), []).append(p)
 
     img_dir = BLOG / "assets" / "img" / "posts" / platform / slug
     img_url = f"/assets/img/posts/{platform}/{slug}"
@@ -218,12 +300,12 @@ def main():
     if platform == "htb":
         print("Reminder:  HackTheBox only allows public write-ups for RETIRED machines/challenges.")
 
-    if args.dry_run:
-        print("\nDry run - nothing was written.")
-        return
+    if dry_run:
+        return None
 
-    if existing and input(f"\n{post.name} already exists. Overwrite? [y/N] ").strip().lower() != "y":
-        sys.exit("Cancelled.")
+    if existing and input(f"{post.name} already exists. Overwrite? [y/N] ").strip().lower() != "y":
+        print("Skipped.")
+        return None
 
     if existing:  # keep the original date so the post doesn't jump to the top
         old_date = re.search(r"^date: .*$", existing[0].read_text(encoding="utf-8"), re.M)
@@ -234,11 +316,8 @@ def main():
     for src, name in copies.items():
         shutil.copy2(src, img_dir / name)
     post.write_text(front + body.lstrip("\n"), encoding="utf-8")
-
-    print(f"\nDone. Open {post.relative_to(BLOG)} to fill in the empty fields, then:")
-    print("  git add -A")
-    print(f'  git commit -m "Add {title} write-up"')
-    print("  git push")
+    print("Written.")
+    return post
 
 
 CALLOUT_CLASSES = {

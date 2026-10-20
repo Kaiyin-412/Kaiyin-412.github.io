@@ -10,10 +10,12 @@ Live site: <https://psyduck0v0.github.io>
 Write in your Obsidian vault as usual, then run from this folder:
 
 ```bash
-python tools/publish.py editor
+python tools/publish.py
 ```
 
-- Searches the vault for a note matching `editor` (run with no name to pick from your most recent HTB/THM/CTF notes).
+- Browse the vault folder by folder: type a number to open a folder, `..` to go back, `q` to quit.
+- Pick notes in the folder: `3` for one, `1,3` or `2-5` for several, `a` for all of them. They are converted one after another.
+- Or search by name: `python tools/publish.py editor`.
 - Copies every embedded image to `assets/img/posts/<htb|thm|ctf>/<slug>/` with clean names and fixes the links.
 - Adds the front matter from the template: title, date and category are filled in; tags and description are left empty for you.
 - Converts `[[wikilinks]]` to plain text and `> [!tip]` callouts to Chirpy tip boxes.
