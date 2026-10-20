@@ -33,3 +33,6 @@ Thumbs.db
 
 # Obsidian vault settings
 .obsidian/
+
+# Python cache
+__pycache__/

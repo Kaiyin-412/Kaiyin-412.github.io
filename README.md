@@ -5,7 +5,24 @@ Cybersecurity blog built with [Jekyll](https://jekyllrb.com) and the
 
 Live site: <https://psyduck0v0.github.io>
 
-## Writing a new post
+## Publishing a write-up from Obsidian
+
+Write in your Obsidian vault as usual, then run from this folder:
+
+```bash
+python tools/publish.py editor
+```
+
+- Searches the vault for a note matching `editor` (run with no name to pick from your most recent HTB/THM/CTF notes).
+- Copies every embedded image to `assets/img/posts/<htb|thm|ctf>/<slug>/` with clean names and fixes the links.
+- Adds the front matter from the template: title, date and category are filled in; tags and description are left empty for you.
+- Converts `[[wikilinks]]` to plain text and `> [!tip]` callouts to Chirpy tip boxes.
+- Running it again for the same note updates the existing post (keeps its date).
+- Add `--dry-run` to preview, or `--title "Nice Title"` to set the title.
+
+The vault path is set at the top of `tools/publish.py`. HackTheBox only allows public write-ups for **retired** machines.
+
+## Writing a new post by hand
 
 1. Copy `docs/POST_TEMPLATE.md` to `_posts/YYYY-MM-DD-your-title.md`.
 2. Edit the front matter (title, date, category, tags, description) and write in Markdown.
