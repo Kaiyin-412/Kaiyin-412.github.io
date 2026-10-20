@@ -1,5 +1,5 @@
 ---
-title: "Soulomate"
+title: "Soulmate"
 date: 2026-10-20 15:40:22 +0800
 categories: [HackTheBox]
 tags: [Linux , easy]
@@ -98,10 +98,16 @@ ben@soulmate:~$ ssh -p 2222 ben@localhost
 ![Soulomate screenshot 16](/assets/img/posts/htb/soulomate/soulomate-16.png)
 
 18. check our priv 
+
+
 ![Soulomate screenshot 17](/assets/img/posts/htb/soulomate/soulomate-17.png)
 
 19. then we can read root flag
+
+
 ![Soulomate screenshot 18](/assets/img/posts/htb/soulomate/soulomate-18.png)
+
+
 
 ![Soulomate screenshot 19](/assets/img/posts/htb/soulomate/soulmate-result.png)
 
