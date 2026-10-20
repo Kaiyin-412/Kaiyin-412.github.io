@@ -1,6 +1,6 @@
 ---
 title: "Soulmate"
-date: 2026-10-20 15:40:22 +0800
+date: 2025-09-23 15:40:22 +0800
 categories: [HackTheBox,redteam]
 tags: [Linux , Easy]
 description: "Linux machine"
