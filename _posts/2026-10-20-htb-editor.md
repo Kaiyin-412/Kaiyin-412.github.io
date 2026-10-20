@@ -1,11 +1,11 @@
 ---
 title: "Editor"
-date: 2025-8-26 15:40:21 +0800
+date: 2025-08-26 15:40:21 +0800
 categories: [HackTheBox]
 tags: [Easy , Linux]
 description: "Linux machine"
 image:
-   path: /assets/img/posts/htb/editor-cover.png
+   path: /assets/img/posts/htb/editor/editor-cover.png
    alt: "Editor"
 ---
 

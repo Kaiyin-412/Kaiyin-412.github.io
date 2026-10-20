@@ -1,6 +1,6 @@
 ---
 title: "Monitorsfour"
-date: 2026-5-28 15:40:22 +0800
+date: 2026-05-28 15:40:22 +0800
 categories: [HackTheBox]
 tags: [Windows, Easy]
 description: "Windows machine"

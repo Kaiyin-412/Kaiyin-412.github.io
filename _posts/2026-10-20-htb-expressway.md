@@ -1,6 +1,6 @@
 ---
 title: "Expressway"
-date: 2025-9-27 15:40:22 +0800
+date: 2025-09-27 15:40:22 +0800
 categories: [HackTheBox]
 tags: [Easy , Linux]
 description: "Linux machine"
