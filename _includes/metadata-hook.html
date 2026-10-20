@@ -22,39 +22,40 @@
     }
   }
 
-  /* Walking duck along the bottom of the page. It never blocks clicks, and it
-     is hidden for visitors who turned on "reduce motion" in their OS. */
+  /* Walking duck along the bottom of the page. It walks one step at a time
+     (moved by the script below), never blocks clicks, and is hidden for
+     visitors who turned on "reduce motion" in their OS. */
   #walking-duck {
     position: fixed;
     bottom: 0;
     left: 0;
-    width: 56px;
-    height: 56px;
+    width: 40px;
+    height: 40px;
     z-index: 1;
     pointer-events: none;
-    animation: duck-walk 40s linear infinite;
+    transition: transform 0.3s ease-in-out;   /* each step glides 0.3s, then stops */
   }
 
-  #walking-duck img {
+  #walking-duck .duck-flip { width: 100%; height: 100%; }
+  #walking-duck.facing-left .duck-flip { transform: scaleX(-1); }
+
+  #walking-duck svg {
+    display: block;
     width: 100%;
     height: 100%;
     transform-origin: 50% 100%;
-    animation: duck-waddle 0.5s ease-in-out infinite alternate;
   }
 
-  /* Walk right, turn around, walk back left, turn around. */
-  @keyframes duck-walk {
-    0%     { transform: translateX(-60px) scaleX(1); }
-    49.9%  { transform: translateX(calc(100vw + 4px)) scaleX(1); }
-    50%    { transform: translateX(calc(100vw + 4px)) scaleX(-1); }
-    99.9%  { transform: translateX(-60px) scaleX(-1); }
-    100%   { transform: translateX(-60px) scaleX(1); }
-  }
+  /* One step: lean, hop up a little, land. Two names so the animation restarts every step. */
+  #walking-duck.step-a svg { animation: duck-step-a 0.3s ease-in-out; }
+  #walking-duck.step-b svg { animation: duck-step-b 0.3s ease-in-out; }
+  @keyframes duck-step-a { 50% { transform: translateY(-3px) rotate(-6deg); } }
+  @keyframes duck-step-b { 50% { transform: translateY(-3px) rotate(6deg); } }
 
-  @keyframes duck-waddle {
-    from { transform: rotate(-7deg); }
-    to   { transform: rotate(7deg) translateY(-2px); }
-  }
+  /* Lift the foot that is stepping */
+  #walking-duck .foot-front, #walking-duck .foot-back { transition: transform 0.15s; }
+  #walking-duck.step-a .foot-front { transform: translateY(-5px); }
+  #walking-duck.step-b .foot-back  { transform: translateY(-5px); }
 
   @media (prefers-reduced-motion: reduce) {
     #walking-duck { display: none; }
@@ -63,10 +64,46 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var STEP = 9;          // px moved per step
+    var STEP_EVERY = 420;  // ms between steps
+    var SIZE = 40;         // must match the CSS width
+
     var duck = document.createElement('div');
     duck.id = 'walking-duck';
     duck.setAttribute('aria-hidden', 'true');
-    duck.innerHTML = '<img src="{{ "/assets/img/duck.svg" | relative_url }}" alt="">';
+    duck.innerHTML = '<div class="duck-flip"></div>';
     document.body.appendChild(duck);
+
+    // Inline the SVG so its feet can be animated
+    fetch('{{ "/assets/img/duck.svg" | relative_url }}')
+      .then(function (r) { return r.text(); })
+      .then(function (svg) {
+        duck.querySelector('.duck-flip').innerHTML = svg;
+        walk();
+      });
+
+    var x = -SIZE, dir = 1, foot = false;
+
+    function walk() {
+      var max = window.innerWidth;
+      // Turn around once fully off either edge
+      if (x > max) dir = -1;
+      if (x < -SIZE) dir = 1;
+      duck.classList.toggle('facing-left', dir < 0);
+
+      x += STEP * dir;
+      duck.style.transform = 'translateX(' + x + 'px)';
+
+      foot = !foot;
+      duck.classList.remove('step-a', 'step-b');
+      duck.classList.add(foot ? 'step-a' : 'step-b');
+      setTimeout(function () { duck.classList.remove('step-a', 'step-b'); }, 320);  // put the foot down
+
+      // Now and then stop for a confused moment, like Psyduck does
+      var pause = Math.random() < 0.04 ? 1500 + Math.random() * 1500 : 0;
+      setTimeout(walk, STEP_EVERY + pause);
+    }
   });
 </script>
