@@ -22,6 +22,23 @@ python tools/publish.py
 - Running it again for the same note updates the existing post (keeps its date).
 - Add `--dry-run` to preview, or `--title "Nice Title"` to set the title.
 
+### Obsidian template
+
+Start every write-up from `Templates/Blog Write-up.md` in the vault (a copy lives in `docs/OBSIDIAN_TEMPLATE.md`).
+Fill in its Properties and the script needs nothing else:
+
+| Property | Becomes |
+| --- | --- |
+| `title`, `date` | post title and date (keep the date in the past) |
+| `platform` | `HTB` / `THM` / `CTF` category (empty = use the vault folder) |
+| `difficulty`, `os` | info table at the top of the post + tags |
+| `tags`, `description` | tags and the summary on the home page |
+| `cover` | banner image, e.g. `[[editor-cover.png]]` |
+| `draft: true` | copied but hidden (`published: false`) |
+| `pin: true` | pinned to the top of the home page |
+
+Text inside `%% ... %%` is an Obsidian comment and is never published.
+
 The vault path is set at the top of `tools/publish.py`. HackTheBox only allows public write-ups for **retired** machines.
 
 ## Writing a new post by hand

@@ -40,7 +40,7 @@ PLATFORMS = [
 DEFAULT_PLATFORM = ("misc", ["Notes"])
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp"}
-SKIP_DIRS = {".obsidian", ".trash", ".git", ".makemd", ".space"}
+SKIP_DIRS = {".obsidian", ".trash", ".git", ".makemd", ".space", "Templates"}
 # ---------------------------------------------------------------------------
 
 
@@ -149,15 +149,62 @@ def detect_platform(note):
 
 
 def split_front_matter(text):
+    """Read the note's Properties (YAML front matter) and return (dict, body)."""
     m = re.match(r"^---\s*\n(.*?)\n---\s*\n?", text, re.S)
     if not m:
         return {}, text
-    fm = {}
-    for line in m.group(1).splitlines():
-        k, sep, v = line.partition(":")
-        if sep and not line.startswith(" "):
-            fm[k.strip()] = v.strip()
+    try:
+        import yaml
+        fm = yaml.safe_load(m.group(1)) or {}
+    except Exception:   # no PyYAML or odd YAML: fall back to simple "key: value" lines
+        fm = {}
+        for line in m.group(1).splitlines():
+            k, sep, v = line.partition(":")
+            if sep and not line.startswith(" "):
+                fm[k.strip()] = v.strip()
+    fm = {str(k).strip().lower(): v for k, v in fm.items()} if isinstance(fm, dict) else {}
     return fm, text[m.end():]
+
+
+def as_list(value):
+    """Obsidian lists ([a, b] or one per line) or "a, b" -> ['a', 'b']."""
+    if value in (None, ""):
+        return []
+    if isinstance(value, (list, tuple)):
+        return [str(v).strip() for v in value if v is not None and str(v).strip()]
+    return [v.strip() for v in str(value).strip("[]").split(",") if v.strip()]
+
+
+def as_text(value):
+    return "" if value is None else str(value).strip().strip("\"'")
+
+
+def as_tag(value):
+    return re.sub(r"\s+", "-", value.strip().lstrip("#").lower())
+
+
+def as_date(value):
+    """'2026-10-20', '2026-10-20 15:40', '2026-10-20T15:40' or a YAML date -> aware datetime."""
+    if value in (None, ""):
+        return None
+    if isinstance(value, datetime.datetime):
+        d = value
+    elif isinstance(value, datetime.date):
+        d = datetime.datetime(value.year, value.month, value.day, 9, 0)
+    else:
+        s = str(value).strip().replace("T", " ")
+        for fmt in ("%Y-%m-%d %H:%M:%S %z", "%Y-%m-%d %H:%M %z", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+            try:
+                d = datetime.datetime.strptime(s, fmt)
+                break
+            except ValueError:
+                continue
+        else:
+            print(f"  ! could not read date '{value}', using now instead")
+            return None
+        if fmt == "%Y-%m-%d":
+            d = d.replace(hour=9)
+    return d if d.tzinfo else d.astimezone()   # no timezone given -> your PC's timezone
 
 
 def yaml_str(s):
@@ -200,14 +247,23 @@ def main():
 
 def publish_note(note, title_override, images, dry_run):
     """Convert one note into a post. Returns the post path, or None if skipped / dry run."""
+    fm, body = split_front_matter(note.read_text(encoding="utf-8"))
+
+    # Platform / category: from the note's "platform" property, else from its vault folder
     platform, categories = detect_platform(note)
-    title = title_override or note.stem.strip()
+    wanted = as_text(fm.get("platform")).upper()
+    for folder, short, cats in PLATFORMS:
+        if wanted and folder == wanted:
+            platform, categories = short, cats
+    if as_list(fm.get("categories")):
+        categories = as_list(fm.get("categories"))
+
+    title = title_override or as_text(fm.get("title")) or note.stem.strip()
     if title.islower():
         title = title[0].upper() + title[1:]   # editor -> Editor
     slug = slugify(title)
     now = datetime.datetime.now().astimezone() - datetime.timedelta(minutes=5)
-
-    fm, body = split_front_matter(note.read_text(encoding="utf-8"))
+    note_date = as_date(fm.get("date"))
 
     img_dir = BLOG / "assets" / "img" / "posts" / platform / slug
     img_url = f"/assets/img/posts/{platform}/{slug}"
@@ -262,28 +318,62 @@ def publish_note(note, title_override, images, dry_run):
 
     body = convert_callouts(body)
 
+    # Obsidian comments %% ... %% are private notes: never publish them
+    body = re.sub(r"%%.*?%%", "", body, flags=re.S)
+
+    # Box info table at the top, built from the platform / difficulty / os properties
+    info = [("Platform", categories[-1]), ("Difficulty", as_text(fm.get("difficulty"))), ("OS", as_text(fm.get("os")))]
+    info = [(k, v) for k, v in info if v]
+    if fm.get("difficulty") or fm.get("os"):
+        body = ("| " + " | ".join(k for k, _ in info) + " |\n"
+                + "|" + " --- |" * len(info) + "\n"
+                + "| " + " | ".join(v for _, v in info) + " |\n\n" + body.lstrip("\n"))
+
     # Jekyll treats {{ }} and {% %} as template code (common in SSTI payloads)
     if "{{" in body or "{%" in body:
         body = "{% raw %}\n" + body.strip("\n") + "\n{% endraw %}\n"
 
     # ---- front matter (fields from docs/POST_TEMPLATE.md) ----
-    tags = fm.get("tags", "").strip("[]")
-    description = fm.get("description", "").strip("\"'")
+    # tags = the note's tags + its difficulty and os properties (lowercase, no duplicates)
+    tag_list = []
+    for t in as_list(fm.get("tags")) + as_list(fm.get("difficulty")) + as_list(fm.get("os")):
+        if as_tag(t) and as_tag(t) not in tag_list:
+            tag_list.append(as_tag(t))
+    tags = ", ".join(tag_list)
+    description = as_text(fm.get("description"))
+
+    # cover image: "cover" property, as [[file.png]] or file.png
+    cover_ref = re.sub(r"^!?\[\[|\]\]$", "", as_text(fm.get("cover")))
+    cover_lines = ["# image:", f"#   path: {img_url}/cover.png", f"#   alt: {yaml_str(title)}"]
+    if cover_ref:
+        src = resolve_image(cover_ref)
+        if src is None:
+            missing.append(cover_ref)
+        else:
+            copies.setdefault(src, f"{slug}-cover{src.suffix.lower()}")   # reuse the name if the body already uses it
+            cover_lines = ["image:", f"  path: {img_url}/{copies[src]}", f"  alt: {yaml_str(title)}"]
+
+    post_date = note_date or now
+    extra = []
+    if fm.get("pin") is True:
+        extra.append("pin: true")
+    if fm.get("draft") is True:
+        extra.append("published: false")
+
     front = "\n".join([
         "---",
         f"title: {yaml_str(title)}",
-        f"date: {now.strftime('%Y-%m-%d %H:%M:%S %z')}",
+        f"date: {post_date.strftime('%Y-%m-%d %H:%M:%S %z')}",
         f"categories: [{', '.join(categories)}]",
         f"tags: [{tags}]",
         f"description: {yaml_str(description)}",
-        "# image:",
-        f"#   path: {img_url}/cover.png",
-        f"#   alt: {yaml_str(title)}",
+        *cover_lines,
+        *extra,
         "---",
         "",
     ])
 
-    post = BLOG / "_posts" / f"{now:%Y-%m-%d}-{platform}-{slug}.md"
+    post = BLOG / "_posts" / f"{post_date:%Y-%m-%d}-{platform}-{slug}.md"
     existing = sorted((BLOG / "_posts").glob(f"*-{platform}-{slug}.md"))
     if existing:
         post = existing[0]   # republishing: update the same post instead of making a duplicate
@@ -295,8 +385,16 @@ def publish_note(note, title_override, images, dry_run):
     print(f"Images:    {len(copies)} -> {img_dir.relative_to(BLOG)}")
     for ref in missing:
         print(f"  ! not found in vault, left as a comment: {ref}")
-    if not tags or not description:
-        print("To fill in: " + ", ".join(x for x, v in (("tags", tags), ("description", description)) if not v))
+    print(f"Date:      {post_date:%Y-%m-%d %H:%M %z}" + ("" if note_date else "  (now - no date property)"))
+    print(f"Tags:      {tags or '-'}")
+    print(f"Cover:     {'yes' if cover_lines[0] == 'image:' else 'none'}")
+    todo = [x for x, v in (("tags", tags), ("description", description), ("cover", cover_lines[0] == "image:")) if not v]
+    if todo:
+        print("To fill in: " + ", ".join(todo))
+    if post_date > datetime.datetime.now().astimezone():
+        print("  ! date is in the future: the post stays hidden until a build runs after that time")
+    if fm.get("draft") is True:
+        print("  ! draft: true -> written with 'published: false', it will not appear on the site")
     if platform == "htb":
         print("Reminder:  HackTheBox only allows public write-ups for RETIRED machines/challenges.")
 
@@ -307,7 +405,7 @@ def publish_note(note, title_override, images, dry_run):
         print("Skipped.")
         return None
 
-    if existing:  # keep the original date so the post doesn't jump to the top
+    if existing and not note_date:  # keep the original date so the post doesn't jump to the top
         old_date = re.search(r"^date: .*$", existing[0].read_text(encoding="utf-8"), re.M)
         if old_date:
             front = re.sub(r"^date: .*$", old_date.group(0), front, count=1, flags=re.M)
