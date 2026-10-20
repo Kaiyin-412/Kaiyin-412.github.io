@@ -18,4 +18,4 @@ you do not own or have explicit permission to test.
 ## Find me
 
 - GitHub: [PsyDuck0v0](https://github.com/PsyDuck0v0)
-- Linkedln: [Psyduck](www.linkedin.com/in/ongkaiyin)
+- LinkedIn: [Psyduck](https://www.linkedin.com/in/ongkaiyin)
